@@ -32,6 +32,22 @@ npm install
 
 Use your normal OpenClaw startup command and ensure the agent endpoint is reachable before running benchmarks.
 
-## 4) Run benchmark scripts
+## 4) Configure environment
+
+```bash
+cd D:/EcoClaw-Bench
+cp .env.example .env
+```
+
+Then edit `.env` and fill your values:
+
+- `ECOCLAW_API_KEY`
+- `ECOCLAW_BASE_URL`
+- `ECOCLAW_MODEL`
+- `ECOCLAW_JUDGE`
+
+See [env.md](env.md) for details.
+
+## 5) Run benchmark scripts
 
 From `D:/EcoClaw-Bench`, execute scripts in `experiments/scripts/`.
