@@ -38,6 +38,8 @@ pip-delete-this-directory.txt
 
 # Benchmark runtime artifacts
 results/raw/pinchbench/
+results/reports/_tmp_*.json
+results/reports/*_cost.json
 
 # Unit test / coverage reports
 htmlcov/
