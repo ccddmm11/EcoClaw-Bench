@@ -67,3 +67,13 @@ echo "Run log saved to: ${RUN_LOG_FILE}"
 if [[ -f "${BENCHMARK_LOG_FILE}" ]]; then
   echo "Benchmark log saved to: ${BENCHMARK_LOG_FILE}"
 fi
+
+RESULT_JSON="$(latest_json_in_dir "${OUTPUT_DIR}" || true)"
+if [[ -n "${RESULT_JSON}" ]]; then
+  COST_REPORT_DIR="${REPO_ROOT}/results/reports"
+  COST_REPORT_FILE="${COST_REPORT_DIR}/baseline_${RUN_TAG}_cost.json"
+  mkdir -p "${COST_REPORT_DIR}"
+  generate_cost_report_and_print_summary "${RESULT_JSON}" "${COST_REPORT_FILE}"
+else
+  echo "Cost report skipped: no result JSON found in ${OUTPUT_DIR}" >&2
+fi

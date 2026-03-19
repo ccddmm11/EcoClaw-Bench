@@ -69,6 +69,7 @@ Linux (bash):
 - [experiments/scripts/run_pinchbench_baseline.sh](experiments/scripts/run_pinchbench_baseline.sh)
 - [experiments/scripts/run_pinchbench_ecoclaw.sh](experiments/scripts/run_pinchbench_ecoclaw.sh)
 - [experiments/scripts/compare_pinchbench_results.sh](experiments/scripts/compare_pinchbench_results.sh)
+- [src/cost/calculate_llm_cost.py](src/cost/calculate_llm_cost.py)
 
 Example:
 

@@ -10,6 +10,7 @@ JUDGE=""
 SUITE=""
 RUNS=""
 TIMEOUT_MULTIPLIER=""
+PARALLEL=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -18,6 +19,7 @@ while [[ $# -gt 0 ]]; do
     --suite) SUITE="${2:-}"; shift 2 ;;
     --runs) RUNS="${2:-}"; shift 2 ;;
     --timeout-multiplier) TIMEOUT_MULTIPLIER="${2:-}"; shift 2 ;;
+    --parallel) PARALLEL="${2:-}"; shift 2 ;;
     *)
       echo "Unknown argument: $1" >&2
       exit 1
@@ -35,6 +37,7 @@ RESOLVED_JUDGE="$(resolve_model_alias "${JUDGE_LIKE}")"
 RESOLVED_SUITE="${SUITE:-${ECOCLAW_SUITE:-automated-only}}"
 RESOLVED_RUNS="${RUNS:-${ECOCLAW_RUNS:-3}}"
 RESOLVED_TIMEOUT="${TIMEOUT_MULTIPLIER:-${ECOCLAW_TIMEOUT_MULTIPLIER:-1.0}}"
+RESOLVED_PARALLEL="${PARALLEL:-${ECOCLAW_PARALLEL:-1}}"
 
 OUTPUT_DIR="${REPO_ROOT}/results/raw/pinchbench/ecoclaw"
 LOG_DIR="${REPO_ROOT}/log"
@@ -50,6 +53,7 @@ uv run scripts/benchmark.py \
   --judge "${RESOLVED_JUDGE}" \
   --suite "${RESOLVED_SUITE}" \
   --runs "${RESOLVED_RUNS}" \
+  --parallel "${RESOLVED_PARALLEL}" \
   --timeout-multiplier "${RESOLVED_TIMEOUT}" \
   --output-dir "${OUTPUT_DIR}" \
   --no-upload \
@@ -62,4 +66,14 @@ fi
 echo "Run log saved to: ${RUN_LOG_FILE}"
 if [[ -f "${BENCHMARK_LOG_FILE}" ]]; then
   echo "Benchmark log saved to: ${BENCHMARK_LOG_FILE}"
+fi
+
+RESULT_JSON="$(latest_json_in_dir "${OUTPUT_DIR}" || true)"
+if [[ -n "${RESULT_JSON}" ]]; then
+  COST_REPORT_DIR="${REPO_ROOT}/results/reports"
+  COST_REPORT_FILE="${COST_REPORT_DIR}/ecoclaw_${RUN_TAG}_cost.json"
+  mkdir -p "${COST_REPORT_DIR}"
+  generate_cost_report_and_print_summary "${RESULT_JSON}" "${COST_REPORT_FILE}"
+else
+  echo "Cost report skipped: no result JSON found in ${OUTPUT_DIR}" >&2
 fi

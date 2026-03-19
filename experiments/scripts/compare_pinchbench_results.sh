@@ -26,8 +26,9 @@ done
 
 mkdir -p "$(dirname "${REPORT_PATH}")" "${LOG_DIR}"
 
-python - <<'PY' "${BASELINE_DIR}" "${ECOCLAW_DIR}" "${REPORT_PATH}" 2>&1 | tee "${RUN_LOG_FILE}"
+python - <<'PY' "${BASELINE_DIR}" "${ECOCLAW_DIR}" "${REPORT_PATH}" "${REPO_ROOT}/src/cost/calculate_llm_cost.py" 2>&1 | tee "${RUN_LOG_FILE}"
 import json
+import importlib.util
 import pathlib
 import statistics
 import sys
@@ -35,6 +36,7 @@ import sys
 baseline_dir = pathlib.Path(sys.argv[1])
 ecoclaw_dir = pathlib.Path(sys.argv[2])
 report_path = pathlib.Path(sys.argv[3])
+cost_script_path = pathlib.Path(sys.argv[4])
 
 def latest_json(path: pathlib.Path) -> pathlib.Path:
     files = sorted(path.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
@@ -46,11 +48,21 @@ def mean_score(payload: dict) -> float:
     vals = [float(t["grading"]["mean"]) for t in payload["tasks"]]
     return statistics.mean(vals) if vals else 0.0
 
+def build_cost_report(input_file: pathlib.Path, payload: dict) -> dict:
+    spec = importlib.util.spec_from_file_location("calculate_llm_cost", str(cost_script_path))
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Unable to load cost script: {cost_script_path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.build_report(input_file, payload)
+
 baseline_file = latest_json(baseline_dir)
 ecoclaw_file = latest_json(ecoclaw_dir)
 
 baseline = json.loads(baseline_file.read_text(encoding="utf-8"))
 ecoclaw = json.loads(ecoclaw_file.read_text(encoding="utf-8"))
+baseline_cost = build_cost_report(baseline_file, baseline)
+ecoclaw_cost = build_cost_report(ecoclaw_file, ecoclaw)
 
 baseline_mean = mean_score(baseline)
 ecoclaw_mean = mean_score(ecoclaw)
@@ -62,6 +74,7 @@ report = {
         "mean_score": round(baseline_mean, 6),
         "total_tokens": baseline["efficiency"].get("total_tokens"),
         "total_cost_usd": baseline["efficiency"].get("total_cost_usd"),
+        "total_cost_cny": baseline_cost["totals"].get("cost_cny"),
         "score_per_1k_tokens": baseline["efficiency"].get("score_per_1k_tokens"),
         "score_per_dollar": baseline["efficiency"].get("score_per_dollar"),
     },
@@ -69,6 +82,7 @@ report = {
         "mean_score": round(ecoclaw_mean, 6),
         "total_tokens": ecoclaw["efficiency"].get("total_tokens"),
         "total_cost_usd": ecoclaw["efficiency"].get("total_cost_usd"),
+        "total_cost_cny": ecoclaw_cost["totals"].get("cost_cny"),
         "score_per_1k_tokens": ecoclaw["efficiency"].get("score_per_1k_tokens"),
         "score_per_dollar": ecoclaw["efficiency"].get("score_per_dollar"),
     },
@@ -76,6 +90,11 @@ report = {
         "mean_score": ecoclaw_mean - baseline_mean,
         "total_tokens": ecoclaw["efficiency"].get("total_tokens", 0) - baseline["efficiency"].get("total_tokens", 0),
         "total_cost_usd": ecoclaw["efficiency"].get("total_cost_usd", 0.0) - baseline["efficiency"].get("total_cost_usd", 0.0),
+        "total_cost_cny": ecoclaw_cost["totals"].get("cost_cny", 0.0) - baseline_cost["totals"].get("cost_cny", 0.0),
+    },
+    "cost_reports": {
+        "baseline": baseline_cost,
+        "ecoclaw": ecoclaw_cost,
     },
 }
 
