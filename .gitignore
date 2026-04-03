@@ -42,6 +42,8 @@ results/reports/_tmp_*.json
 results/reports/*_cost.json
 experiments/dataset/claw_eval/assets/
 experiments/dataset/pinchbench/assets/
+claw_eval_assets_20260330.zip
+pinchbench_assets_20260330.zip
 
 # Unit test / coverage reports
 htmlcov/
