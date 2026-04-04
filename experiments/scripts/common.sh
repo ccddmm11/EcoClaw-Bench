@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Unset proxy env vars to prevent LLM API requests from going through a
+# potentially broken local proxy tunnel.
+unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY ALL_PROXY all_proxy 2>/dev/null || true
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
@@ -209,6 +213,48 @@ ensure_openclaw_gateway_running() {
     return 1
   fi
   echo "OpenClaw gateway is reachable"
+}
+
+cleanup_bench_agents_and_gateway() {
+  echo "Cleaning up bench agents and gateway..."
+
+  # Remove all bench-* agent entries from openclaw config
+  local bench_agents
+  bench_agents="$(openclaw agents list 2>&1 | grep -oP '(?<=^- )\S+' | grep '^bench-' || true)"
+  if [[ -n "${bench_agents}" ]]; then
+    local count=0
+    while IFS= read -r agent; do
+      openclaw agents delete "${agent}" --force >/dev/null 2>&1 || true
+      count=$((count + 1))
+    done <<< "${bench_agents}"
+    echo "Deleted ${count} bench agent(s) from openclaw"
+  fi
+
+  # Remove bench-* agent store directories
+  if compgen -G "${HOME}/.openclaw/agents/bench-*" >/dev/null 2>&1; then
+    rm -rf "${HOME}/.openclaw/agents/bench-"*
+    echo "Removed bench agent store directories"
+  fi
+
+  # Remove workspace-bench-* directories
+  if compgen -G "${HOME}/.openclaw/workspace-bench-*" >/dev/null 2>&1; then
+    rm -rf "${HOME}/.openclaw/workspace-bench-"*
+    echo "Removed bench workspace directories"
+  fi
+
+  # Remove openclaw.json backup/tmp files
+  rm -f "${HOME}/.openclaw/openclaw.json.bak."[0-9]* \
+        "${HOME}/.openclaw/openclaw.json."*.tmp 2>/dev/null || true
+
+  # Remove /tmp/pinchbench workspace residuals
+  rm -rf /tmp/pinchbench* 2>/dev/null || true
+
+  # Restart gateway to clear in-memory session state
+  if pkill -f 'openclaw gateway' 2>/dev/null; then
+    echo "Stopped openclaw gateway"
+  fi
+
+  echo "Bench cleanup complete"
 }
 
 inject_multi_agent_config() {

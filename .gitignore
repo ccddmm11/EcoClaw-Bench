@@ -38,8 +38,8 @@ pip-delete-this-directory.txt
 
 # Benchmark runtime artifacts
 results/raw/pinchbench/
-results/reports/_tmp_*.json
-results/reports/*_cost.json
+results/raw/**/*.json
+results/reports/*.json
 experiments/dataset/claw_eval/assets/
 experiments/dataset/pinchbench/assets/
 claw_eval_assets_20260330.zip

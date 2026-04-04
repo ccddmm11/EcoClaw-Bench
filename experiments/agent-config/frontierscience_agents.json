@@ -2,16 +2,13 @@
   "agents": {
     "defaults": {
       "model": {
-        "primary": "tuzi/gpt-5.4",
-        "fallbacks": [
-          "custom-llm/gemini-2.5-flash",
-          "custom-llm/claude-sonnet-4"
-        ]
+        "primary": "dmxapi/gpt-5-mini",
+        "fallbacks": []
       },
       "subagents": {
-        "model": "tuzi/gpt-5.4",
-        "thinking": "high",
-        "maxConcurrent": 2,
+        "model": "dmxapi/gpt-5-mini",
+        "thinking": "off",
+        "maxConcurrent": 3,
         "archiveAfterMinutes": 30
       },
       "sandbox": {
@@ -23,7 +20,7 @@
         "id": "coordinator",
         "default": true,
         "name": "Orchestrator",
-        "model": "tuzi/gpt-5.4",
+        "model": "dmxapi/gpt-5.4-mini",
         "skills": [
           "workflow-orchestration-patterns",
           "summarize",
@@ -31,13 +28,16 @@
           "deep-research"
         ],
         "subagents": {
-          "allowAgents": ["researcher", "reviewer"]
+          "allowAgents": [
+            "researcher",
+            "reviewer"
+          ]
         }
       },
       {
         "id": "researcher",
         "name": "Research Agent",
-        "model": "tuzi/gpt-5.4",
+        "model": "dmxapi/gpt-5-mini",
         "skills": [
           "tavily",
           "academic-researcher",
@@ -50,7 +50,7 @@
       {
         "id": "reviewer",
         "name": "Science Reviewer",
-        "model": "tuzi/gpt-5.4",
+        "model": "dmxapi/gpt-5-mini",
         "skills": [
           "scientific-writing",
           "citation-management",
@@ -63,8 +63,13 @@
   "tools": {
     "subagents": {
       "tools": {
-        "deny": ["browser"]
+        "deny": [
+          "browser"
+        ]
       }
     }
+  },
+  "commands": {
+    "restart": true
   }
 }
